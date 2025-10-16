@@ -1,0 +1,27 @@
+# Configuración de Terraform para AWS
+
+# Región de AWS
+aws_region = "us-east-1"
+
+# Ambiente (dev, staging, prod)
+environment = "dev"
+
+# Zonas de disponibilidad
+availability_zones = ["us-east-1a", "us-east-1b"]
+
+# Credenciales de Base de Datos (CAMBIAR EN PRODUCCIÓN)
+db_username = "escalabilidad_user"
+db_password = "password1"
+
+# Credenciales de RabbitMQ (CAMBIAR EN PRODUCCIÓN)
+rabbitmq_username = "admin"
+rabbitmq_password = "password1"
+
+# Configuración de recursos ECS
+api_gateway_cpu           = 256
+api_gateway_memory        = 512
+api_gateway_desired_count = 2
+
+worker_cpu           = 256
+worker_memory        = 512
+worker_desired_count = 2

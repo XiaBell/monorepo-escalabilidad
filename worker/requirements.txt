@@ -1,0 +1,5 @@
+# Async PostgreSQL driver
+asyncpg==0.30.0
+
+# Async RabbitMQ client
+aio-pika==9.5.1

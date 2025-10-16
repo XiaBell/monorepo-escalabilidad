@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Escalabilidad - Consulta de Productos</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Sistema de Escalabilidad y Latencia</h1>
+            <p class="subtitle">Arquitectura de Microservicios con Patrón Productor/Consumidor</p>
+        </header>
+
+        <div class="status-bar">
+            <div class="status-item">
+                <span class="status-label">API Gateway:</span>
+                <span id="api-status" class="status-indicator checking">Verificando...</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Base de datos:</span>
+                <span id="db-status" class="status-indicator checking">Verificando...</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Message Broker:</span>
+                <span id="mq-status" class="status-indicator checking">Verificando...</span>
+            </div>
+        </div>
+
+        <main>
+            <section class="card">
+                <h2>Consultar Productos</h2>
+
+                <div class="action-buttons">
+                    <button id="btn-listar-todos" class="btn btn-primary">
+                        Listar Todos los Productos
+                    </button>
+
+                    <div class="search-group">
+                        <input
+                            type="text"
+                            id="input-codigo"
+                            placeholder="Ej: PROD001"
+                            class="input-codigo"
+                        >
+                        <button id="btn-buscar-codigo" class="btn btn-secondary">
+                            Buscar por Código
+                        </button>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <p><strong>Cómo funciona:</strong></p>
+                    <ol>
+                        <li>Al hacer clic, se crea una consulta asíncrona en el API Gateway</li>
+                        <li>La consulta se encola en RabbitMQ</li>
+                        <li>Un Worker procesa la consulta y actualiza el resultado</li>
+                        <li>El frontend hace polling para obtener el resultado</li>
+                    </ol>
+                </div>
+            </section>
+
+            <section class="card">
+                <h2>Consultas en Proceso</h2>
+                <div id="consultas-pendientes" class="consultas-list">
+                    <p class="empty-state">No hay consultas en proceso</p>
+                </div>
+            </section>
+
+            <section class="card">
+                <h2>Resultados</h2>
+                <div id="resultados" class="resultados-container">
+                    <p class="empty-state">No hay resultados disponibles</p>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Proyecto Universitario - Sistemas Distribuidos y Escalables</p>
+            <p class="tech-stack">FastAPI - RabbitMQ - PostgreSQL - Docker</p>
+        </footer>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
