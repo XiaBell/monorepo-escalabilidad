@@ -34,23 +34,18 @@ echo -e "${GREEN}Paso 1: Verificando herramientas...${NC}"
 
 # Verificar Docker
 if ! command -v docker &> /dev/null; then
-    echo -e "${RED}Error: Docker no está disponible en CloudShell${NC}"
-    echo "Docker es requerido para construir las imágenes"
+    echo -e "${RED}Error: Docker no está disponible${NC}"
+    exit 1
+fi
+
+# Verificar Terraform
+if ! command -v terraform &> /dev/null; then
+    echo -e "${RED}Error: Terraform no está disponible${NC}"
     exit 1
 fi
 
 echo "Docker version: $(docker --version)"
-
-# Instalar Terraform si no está disponible
-if ! command -v terraform &> /dev/null; then
-    echo "Instalando Terraform..."
-    wget https://releases.hashicorp.com/terraform/1.6.6/terraform_1.6.6_linux_amd64.zip
-    unzip terraform_1.6.6_linux_amd64.zip
-    sudo mv terraform /usr/local/bin/
-    rm terraform_1.6.6_linux_amd64.zip
-fi
-
-terraform version
+echo "Terraform version: $(terraform version | head -n1)"
 echo ""
 
 # Verificar si existe terraform.tfvars
