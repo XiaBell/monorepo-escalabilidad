@@ -44,7 +44,6 @@ resource "aws_db_instance" "postgres" {
   
   # Configuraciones adicionales para evitar timeouts
   deletion_protection = false
-  skip_final_snapshot = true
   
   # Timeouts más largos
   timeouts {
