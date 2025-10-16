@@ -243,7 +243,5 @@ resource "aws_service_discovery_service" "rabbitmq" {
     routing_policy = "MULTIVALUE"
   }
 
-  health_check_grace_period_seconds = 30
-
   tags = local.common_tags
 }
