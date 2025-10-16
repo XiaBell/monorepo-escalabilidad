@@ -17,7 +17,8 @@ resource "aws_ecs_task_definition" "api_gateway" {
   requires_compatibilities = ["FARGATE"]
   cpu                      = var.api_gateway_cpu
   memory                   = var.api_gateway_memory
-  # execution_role_arn y task_role_arn eliminados para evitar errores de permisos
+  # Usa un rol existente permitido por el entorno Voclabs (definido en iam.tf)
+  execution_role_arn       = data.aws_iam_role.existing_execution_role.arn
 
   container_definitions = jsonencode([
     {
@@ -68,7 +69,7 @@ resource "aws_ecs_task_definition" "worker" {
   requires_compatibilities = ["FARGATE"]
   cpu                      = var.worker_cpu
   memory                   = var.worker_memory
-  # execution_role_arn y task_role_arn eliminados para evitar errores de permisos
+  execution_role_arn       = data.aws_iam_role.existing_execution_role.arn
 
   container_definitions = jsonencode([
     {
@@ -105,7 +106,7 @@ resource "aws_ecs_task_definition" "rabbitmq" {
   requires_compatibilities = ["FARGATE"]
   cpu                      = 256
   memory                   = 512
-  # Sin execution_role_arn ni task_role_arn
+  execution_role_arn       = data.aws_iam_role.existing_execution_role.arn
 
   container_definitions = jsonencode([
     {
@@ -189,9 +190,7 @@ resource "aws_ecs_service" "rabbitmq" {
     container_port   = 15672
   }
 
-  service_registries {
-    registry_arn = aws_service_discovery_service.rabbitmq.arn
-  }
+  # Eliminado Service Discovery (Cloud Map) para evitar AccessDenied
 
   depends_on = [
     aws_lb_listener.http
@@ -220,28 +219,4 @@ resource "aws_ecs_service" "worker" {
   tags = local.common_tags
 }
 
-# Service Discovery para RabbitMQ
-resource "aws_service_discovery_private_dns_namespace" "main" {
-  name        = "${local.app_name}.local"
-  description = "Private DNS namespace for ${local.app_name}"
-  vpc         = aws_vpc.main.id
-
-  tags = local.common_tags
-}
-
-resource "aws_service_discovery_service" "rabbitmq" {
-  name = "rabbitmq"
-
-  dns_config {
-    namespace_id = aws_service_discovery_private_dns_namespace.main.id
-
-    dns_records {
-      ttl  = 10
-      type = "A"
-    }
-
-    routing_policy = "MULTIVALUE"
-  }
-
-  tags = local.common_tags
-}
+# Eliminados recursos de Service Discovery (Cloud Map) por restricciones del entorno
