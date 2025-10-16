@@ -8,6 +8,8 @@ Esta guía explica cómo desplegar el sistema completo desde AWS CloudShell.
 2. Permisos IAM necesarios para crear recursos (VPC, ECS, RDS, MQ, S3, ECR, etc.)
 3. Repositorio clonado en CloudShell
 
+**Nota:** AWS CloudShell ya incluye Docker y Terraform preinstalados, no necesitas instalar nada adicional.
+
 ## Flujo de Credenciales
 
 ### Cómo se manejan las credenciales
@@ -94,7 +96,7 @@ chmod +x cloudshell-deploy.sh
 
 El script ejecutará automáticamente:
 
-1. ✅ **Verificación de herramientas** (Docker, Terraform)
+1. ✅ **Verificación de herramientas** (Docker y Terraform ya vienen en CloudShell)
 2. ✅ **Inicialización de Terraform** (`terraform init`)
 3. ✅ **Validación** (`terraform validate`)
 4. ✅ **Generación del plan** (`terraform plan`)
@@ -208,14 +210,11 @@ aws logs tail /ecs/escalabilidad/worker --follow
 
 ### Error: "Docker no está disponible"
 
-CloudShell incluye Docker por defecto. Si ves este error:
+AWS CloudShell incluye Docker por defecto. Si ves este error, simplemente reinicia tu sesión de CloudShell:
 
-```bash
-# Verificar que Docker esté corriendo
-docker ps
-
-# Si no responde, reinicia CloudShell
-```
+1. Cierra la pestaña de CloudShell
+2. Abre CloudShell nuevamente desde la consola de AWS
+3. Vuelve a clonar el repositorio o navega al directorio
 
 ### Error: "Falló la construcción de imagen"
 

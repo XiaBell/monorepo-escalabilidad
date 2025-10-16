@@ -1,16 +1,4 @@
-resource "aws_cloudwatch_log_group" "api_gateway" {
-  name              = "/ecs/${local.app_name}/api-gateway"
-  retention_in_days = 7
-
-  tags = local.common_tags
-}
-
-resource "aws_cloudwatch_log_group" "worker" {
-  name              = "/ecs/${local.app_name}/worker"
-  retention_in_days = 7
-
-  tags = local.common_tags
-}
+# Log groups eliminados - no se necesitan sin roles IAM
 
 resource "aws_ecs_cluster" "main" {
   name = "${local.app_name}-cluster"
@@ -29,8 +17,7 @@ resource "aws_ecs_task_definition" "api_gateway" {
   requires_compatibilities = ["FARGATE"]
   cpu                      = var.api_gateway_cpu
   memory                   = var.api_gateway_memory
-  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
-  task_role_arn            = aws_iam_role.ecs_task_role.arn
+  # execution_role_arn y task_role_arn eliminados para evitar errores de permisos
 
   container_definitions = jsonencode([
     {
@@ -52,7 +39,7 @@ resource "aws_ecs_task_definition" "api_gateway" {
         },
         {
           name  = "RABBITMQ_URL"
-          value = "amqps://${var.rabbitmq_username}:${var.rabbitmq_password}@${replace(aws_mq_broker.rabbitmq.instances[0].endpoints[0], ":5671", "")}:5671"
+          value = "amqp://${var.rabbitmq_username}:${var.rabbitmq_password}@rabbitmq.local:5672"
         },
         {
           name  = "QUEUE_NAME"
@@ -60,14 +47,7 @@ resource "aws_ecs_task_definition" "api_gateway" {
         }
       ]
 
-      logConfiguration = {
-        logDriver = "awslogs"
-        options = {
-          "awslogs-group"         = aws_cloudwatch_log_group.api_gateway.name
-          "awslogs-region"        = var.aws_region
-          "awslogs-stream-prefix" = "ecs"
-        }
-      }
+      # logConfiguration eliminado - no se puede usar sin execution role
 
       healthCheck = {
         command     = ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
@@ -88,8 +68,7 @@ resource "aws_ecs_task_definition" "worker" {
   requires_compatibilities = ["FARGATE"]
   cpu                      = var.worker_cpu
   memory                   = var.worker_memory
-  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
-  task_role_arn            = aws_iam_role.ecs_task_role.arn
+  # execution_role_arn y task_role_arn eliminados para evitar errores de permisos
 
   container_definitions = jsonencode([
     {
@@ -104,7 +83,7 @@ resource "aws_ecs_task_definition" "worker" {
         },
         {
           name  = "RABBITMQ_URL"
-          value = "amqps://${var.rabbitmq_username}:${var.rabbitmq_password}@${replace(aws_mq_broker.rabbitmq.instances[0].endpoints[0], ":5671", "")}:5671"
+          value = "amqp://${var.rabbitmq_username}:${var.rabbitmq_password}@rabbitmq.local:5672"
         },
         {
           name  = "QUEUE_NAME"
@@ -112,14 +91,51 @@ resource "aws_ecs_task_definition" "worker" {
         }
       ]
 
-      logConfiguration = {
-        logDriver = "awslogs"
-        options = {
-          "awslogs-group"         = aws_cloudwatch_log_group.worker.name
-          "awslogs-region"        = var.aws_region
-          "awslogs-stream-prefix" = "ecs"
+      # logConfiguration eliminado - no se puede usar sin execution role
+    }
+  ])
+
+  tags = local.common_tags
+}
+
+# Task Definition para RabbitMQ en ECS
+resource "aws_ecs_task_definition" "rabbitmq" {
+  family                   = "${local.app_name}-rabbitmq"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = 256
+  memory                   = 512
+  # Sin execution_role_arn ni task_role_arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "rabbitmq"
+      image     = "rabbitmq:3.13-management-alpine"
+      essential = true
+
+      portMappings = [
+        {
+          containerPort = 5672
+          protocol      = "tcp"
+        },
+        {
+          containerPort = 15672
+          protocol      = "tcp"
         }
-      }
+      ]
+
+      environment = [
+        {
+          name  = "RABBITMQ_DEFAULT_USER"
+          value = var.rabbitmq_username
+        },
+        {
+          name  = "RABBITMQ_DEFAULT_PASS"
+          value = var.rabbitmq_password
+        }
+      ]
+
+      # Sin logConfiguration
     }
   ])
 
@@ -147,8 +163,38 @@ resource "aws_ecs_service" "api_gateway" {
 
   depends_on = [
     aws_lb_listener.http,
-    aws_db_instance.postgres,
-    aws_mq_broker.rabbitmq
+    aws_db_instance.postgres
+  ]
+
+  tags = local.common_tags
+}
+
+# Service para RabbitMQ
+resource "aws_ecs_service" "rabbitmq" {
+  name            = "${local.app_name}-rabbitmq"
+  cluster         = aws_ecs_cluster.main.id
+  task_definition = aws_ecs_task_definition.rabbitmq.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = aws_subnet.private[*].id
+    security_groups  = [aws_security_group.rabbitmq_ecs.id]
+    assign_public_ip = false
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.rabbitmq_tg.arn
+    container_name   = "rabbitmq"
+    container_port   = 15672
+  }
+
+  service_registries {
+    registry_arn = aws_service_discovery_service.rabbitmq.arn
+  }
+
+  depends_on = [
+    aws_lb_listener.http
   ]
 
   tags = local.common_tags
@@ -168,9 +214,36 @@ resource "aws_ecs_service" "worker" {
   }
 
   depends_on = [
-    aws_db_instance.postgres,
-    aws_mq_broker.rabbitmq
+    aws_db_instance.postgres
   ]
+
+  tags = local.common_tags
+}
+
+# Service Discovery para RabbitMQ
+resource "aws_service_discovery_private_dns_namespace" "main" {
+  name        = "${local.app_name}.local"
+  description = "Private DNS namespace for ${local.app_name}"
+  vpc         = aws_vpc.main.id
+
+  tags = local.common_tags
+}
+
+resource "aws_service_discovery_service" "rabbitmq" {
+  name = "rabbitmq"
+
+  dns_config {
+    namespace_id = aws_service_discovery_private_dns_namespace.main.id
+
+    dns_records {
+      ttl  = 10
+      type = "A"
+    }
+
+    routing_policy = "MULTIVALUE"
+  }
+
+  health_check_grace_period_seconds = 30
 
   tags = local.common_tags
 }

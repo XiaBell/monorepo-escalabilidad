@@ -45,6 +45,35 @@ resource "aws_lb_target_group" "api_gateway" {
   )
 }
 
+resource "aws_lb_target_group" "rabbitmq_tg" {
+  name        = "${local.app_name}-rabbitmq-tg"
+  port        = 15672
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.main.id
+  target_type = "ip"
+
+  health_check {
+    enabled             = true
+    healthy_threshold   = 2
+    interval            = 30
+    matcher             = "200"
+    path                = "/"
+    port                = "traffic-port"
+    protocol            = "HTTP"
+    timeout             = 5
+    unhealthy_threshold = 3
+  }
+
+  deregistration_delay = 30
+
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${local.app_name}-rabbitmq-tg"
+    }
+  )
+}
+
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.main.arn
   port              = "80"
@@ -53,5 +82,21 @@ resource "aws_lb_listener" "http" {
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.api_gateway.arn
+  }
+}
+
+resource "aws_lb_listener_rule" "rabbitmq" {
+  listener_arn = aws_lb_listener.http.arn
+  priority     = 100
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.rabbitmq_tg.arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/rabbitmq/*"]
+    }
   }
 }

@@ -122,41 +122,49 @@ resource "aws_security_group" "rds" {
   )
 }
 
-resource "aws_security_group" "rabbitmq" {
-  name_prefix = "${local.app_name}-rabbitmq-"
-  description = "Security group for Amazon MQ (RabbitMQ)"
+resource "aws_security_group" "rabbitmq_ecs" {
+  name_prefix = "${local.app_name}-rabbitmq-ecs-"
+  description = "Security group for RabbitMQ running in ECS"
   vpc_id      = aws_vpc.main.id
 
   ingress {
     description     = "AMQP from API Gateway"
-    from_port       = 5671
-    to_port         = 5671
+    from_port       = 5672
+    to_port         = 5672
     protocol        = "tcp"
     security_groups = [aws_security_group.api_gateway.id]
   }
 
   ingress {
     description     = "AMQP from Worker"
-    from_port       = 5671
-    to_port         = 5671
+    from_port       = 5672
+    to_port         = 5672
     protocol        = "tcp"
     security_groups = [aws_security_group.worker.id]
   }
 
   ingress {
     description     = "RabbitMQ Management from API Gateway"
-    from_port       = 443
-    to_port         = 443
+    from_port       = 15672
+    to_port         = 15672
     protocol        = "tcp"
     security_groups = [aws_security_group.api_gateway.id]
   }
 
   ingress {
     description     = "RabbitMQ Management from Worker"
-    from_port       = 443
-    to_port         = 443
+    from_port       = 15672
+    to_port         = 15672
     protocol        = "tcp"
     security_groups = [aws_security_group.worker.id]
+  }
+
+  ingress {
+    description     = "RabbitMQ Management from ALB"
+    from_port       = 15672
+    to_port         = 15672
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb.id]
   }
 
   egress {
@@ -170,7 +178,7 @@ resource "aws_security_group" "rabbitmq" {
   tags = merge(
     local.common_tags,
     {
-      Name = "${local.app_name}-rabbitmq-sg"
+      Name = "${local.app_name}-rabbitmq-ecs-sg"
     }
   )
 }

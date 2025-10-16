@@ -31,7 +31,7 @@ output "rds_endpoint" {
 
 output "rabbitmq_console_url" {
   description = "URL de la consola de RabbitMQ"
-  value       = aws_mq_broker.rabbitmq.instances[0].console_url
+  value       = "http://${aws_lb.main.dns_name}/rabbitmq/"
 }
 
 output "ecr_api_gateway_repository_url" {

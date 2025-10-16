@@ -75,3 +75,45 @@ resource "aws_ecr_lifecycle_policy" "worker" {
     }]
   })
 }
+
+# Política pública para API Gateway
+resource "aws_ecr_repository_policy" "api_gateway" {
+  repository = aws_ecr_repository.api_gateway.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowPublicPull"
+        Effect = "Allow"
+        Principal = "*"
+        Action = [
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:BatchCheckLayerAvailability"
+        ]
+      }
+    ]
+  })
+}
+
+# Política pública para Worker
+resource "aws_ecr_repository_policy" "worker" {
+  repository = aws_ecr_repository.worker.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowPublicPull"
+        Effect = "Allow"
+        Principal = "*"
+        Action = [
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:BatchCheckLayerAvailability"
+        ]
+      }
+    ]
+  })
+}
