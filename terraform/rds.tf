@@ -30,7 +30,7 @@ resource "aws_db_instance" "postgres" {
 
   multi_az               = false
   publicly_accessible    = true
-  backup_retention_period = 7
+  backup_retention_period = 0
   backup_window          = "03:00-04:00"
   maintenance_window     = "mon:04:00-mon:05:00"
 
@@ -41,6 +41,17 @@ resource "aws_db_instance" "postgres" {
   
   # Asegurar que la instancia esté disponible antes de continuar
   apply_immediately = true
+  
+  # Configuraciones adicionales para evitar timeouts
+  deletion_protection = false
+  skip_final_snapshot = true
+  
+  # Timeouts más largos
+  timeouts {
+    create = "30m"
+    update = "30m"
+    delete = "30m"
+  }
 
   tags = merge(
     local.common_tags,

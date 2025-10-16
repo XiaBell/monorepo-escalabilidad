@@ -90,20 +90,13 @@ resource "aws_security_group" "rds" {
   description = "Security group for RDS PostgreSQL"
   vpc_id      = aws_vpc.main.id
 
+  # Permitir acceso desde ECS tasks (API Gateway y Worker)
   ingress {
-    description     = "PostgreSQL from API Gateway"
+    description     = "PostgreSQL from ECS tasks"
     from_port       = 5432
     to_port         = 5432
     protocol        = "tcp"
-    security_groups = [aws_security_group.api_gateway.id]
-  }
-
-  ingress {
-    description     = "PostgreSQL from Worker"
-    from_port       = 5432
-    to_port         = 5432
-    protocol        = "tcp"
-    security_groups = [aws_security_group.worker.id]
+    security_groups = [aws_security_group.ecs_tasks.id]
   }
 
   # TEMPORAL: Permitir acceso desde cualquier IP para debug (REMOVER EN PRODUCCIÓN)
@@ -113,6 +106,15 @@ resource "aws_security_group" "rds" {
     to_port     = 5432
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+  
+  # TEMPORAL: Permitir acceso desde subnets privadas (por si acaso)
+  ingress {
+    description = "PostgreSQL from private subnets"
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.0.0/16"]
   }
 
   egress {
@@ -131,41 +133,47 @@ resource "aws_security_group" "rds" {
   )
 }
 
+# SG dedicado para ECS tasks (API Gateway y Worker)
+resource "aws_security_group" "ecs_tasks" {
+  name_prefix = "${local.app_name}-ecs-tasks-"
+  description = "Security group for ECS tasks (API Gateway and Worker)"
+  vpc_id      = aws_vpc.main.id
+
+  egress {
+    description = "Allow all outbound"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${local.app_name}-ecs-tasks-sg"
+    }
+  )
+}
+
 resource "aws_security_group" "rabbitmq_ecs" {
   name_prefix = "${local.app_name}-rabbitmq-ecs-"
   description = "Security group for RabbitMQ running in ECS"
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    description     = "AMQP from API Gateway"
+    description     = "AMQP from ECS tasks"
     from_port       = 5672
     to_port         = 5672
     protocol        = "tcp"
-    security_groups = [aws_security_group.api_gateway.id]
+    security_groups = [aws_security_group.ecs_tasks.id]
   }
 
   ingress {
-    description     = "AMQP from Worker"
-    from_port       = 5672
-    to_port         = 5672
-    protocol        = "tcp"
-    security_groups = [aws_security_group.worker.id]
-  }
-
-  ingress {
-    description     = "RabbitMQ Management from API Gateway"
+    description     = "RabbitMQ Management from ECS tasks"
     from_port       = 15672
     to_port         = 15672
     protocol        = "tcp"
-    security_groups = [aws_security_group.api_gateway.id]
-  }
-
-  ingress {
-    description     = "RabbitMQ Management from Worker"
-    from_port       = 15672
-    to_port         = 15672
-    protocol        = "tcp"
-    security_groups = [aws_security_group.worker.id]
+    security_groups = [aws_security_group.ecs_tasks.id]
   }
 
   ingress {
