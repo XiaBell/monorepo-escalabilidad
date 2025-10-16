@@ -164,7 +164,8 @@ resource "aws_ecs_service" "api_gateway" {
 
   depends_on = [
     aws_lb_listener.http,
-    aws_db_instance.postgres
+    aws_db_instance.postgres,
+    aws_security_group.rds
   ]
 
   tags = local.common_tags
@@ -213,7 +214,8 @@ resource "aws_ecs_service" "worker" {
   }
 
   depends_on = [
-    aws_db_instance.postgres
+    aws_db_instance.postgres,
+    aws_security_group.rds
   ]
 
   tags = local.common_tags

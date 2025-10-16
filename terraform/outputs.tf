@@ -29,6 +29,22 @@ output "rds_endpoint" {
   sensitive   = true
 }
 
+output "rds_port" {
+  description = "Puerto de la base de datos RDS"
+  value       = aws_db_instance.postgres.port
+}
+
+output "rds_database_name" {
+  description = "Nombre de la base de datos"
+  value       = aws_db_instance.postgres.db_name
+}
+
+output "rds_username" {
+  description = "Usuario de la base de datos"
+  value       = aws_db_instance.postgres.username
+  sensitive   = true
+}
+
 output "rabbitmq_console_url" {
   description = "URL de la consola de RabbitMQ"
   value       = "http://${aws_lb.main.dns_name}/rabbitmq/"

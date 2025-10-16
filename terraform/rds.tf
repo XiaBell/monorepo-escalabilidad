@@ -38,6 +38,9 @@ resource "aws_db_instance" "postgres" {
   final_snapshot_identifier = "${local.app_name}-postgres-final-snapshot"
 
   enabled_cloudwatch_logs_exports = ["postgresql", "upgrade"]
+  
+  # Asegurar que la instancia esté disponible antes de continuar
+  apply_immediately = true
 
   tags = merge(
     local.common_tags,

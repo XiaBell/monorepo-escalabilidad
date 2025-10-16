@@ -106,6 +106,15 @@ resource "aws_security_group" "rds" {
     security_groups = [aws_security_group.worker.id]
   }
 
+  # TEMPORAL: Permitir acceso desde cualquier IP para debug (REMOVER EN PRODUCCIÓN)
+  ingress {
+    description = "PostgreSQL from anywhere (TEMPORAL DEBUG)"
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   egress {
     description = "Allow all outbound"
     from_port   = 0
