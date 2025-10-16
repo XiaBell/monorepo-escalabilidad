@@ -7,6 +7,12 @@ echo "Deploy desde AWS CloudShell"
 echo "Sistema de Escalabilidad Universitario"
 echo "=================================================="
 echo ""
+echo -e "${YELLOW}ARQUITECTURA ACTUALIZADA (v2.0):${NC}"
+echo "• RabbitMQ en ECS (no Amazon MQ)"
+echo "• ECR repositorios públicos (sin roles IAM)"
+echo "• Sin logs CloudWatch (sin execution roles)"
+echo "• Service Discovery para comunicación interna"
+echo ""
 
 # Colores
 RED='\033[0;31m'
@@ -154,6 +160,13 @@ aws ecs update-service \
     --force-new-deployment \
     --region $AWS_REGION > /dev/null
 
+echo "Actualizando RabbitMQ service..."
+aws ecs update-service \
+    --cluster $CLUSTER_NAME \
+    --service escalabilidad-rabbitmq \
+    --force-new-deployment \
+    --region $AWS_REGION > /dev/null
+
 echo ""
 echo -e "${GREEN}=================================================="
 echo "Despliegue Completado Exitosamente"
@@ -163,6 +176,13 @@ echo "URLs de Acceso:"
 echo "  Frontend:    $(terraform output -raw frontend_url)"
 echo "  API Gateway: $(terraform output -raw alb_url)"
 echo "  RabbitMQ:    $(terraform output -raw rabbitmq_console_url)"
+echo ""
+echo -e "${YELLOW}ARQUITECTURA ACTUALIZADA:${NC}"
+echo ""
+echo "✅ RabbitMQ ahora corre en ECS (no Amazon MQ)"
+echo "✅ ECR repositorios son públicos (sin roles IAM)"
+echo "✅ Sin logs en CloudWatch (sin execution roles)"
+echo "✅ Service Discovery: rabbitmq.local"
 echo ""
 echo -e "${YELLOW}IMPORTANTE - Siguiente Paso:${NC}"
 echo ""
@@ -179,5 +199,11 @@ echo "2. Esperar 5-10 minutos para que los servicios ECS estén saludables"
 echo ""
 echo "3. Verificar health del API:"
 echo "   curl \$(terraform output -raw alb_url)/health"
+echo ""
+echo "4. Verificar RabbitMQ Management:"
+echo "   curl \$(terraform output -raw rabbitmq_console_url)"
+echo ""
+echo "5. Monitorear servicios ECS:"
+echo "   aws ecs list-services --cluster \$CLUSTER_NAME --region \$AWS_REGION"
 echo ""
 echo -e "${GREEN}Deployment finalizado.${NC}"
