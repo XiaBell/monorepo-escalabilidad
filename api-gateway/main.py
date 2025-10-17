@@ -41,7 +41,7 @@ async def lifespan(app: FastAPI):
         print("Conexión a PostgreSQL establecida")
     except Exception as e:
         print(f"Error conectando a PostgreSQL: {e}")
-        raise
+        app_state.db_pool = None  # Permitir que la app inicie y reporte unhealthy en /health
 
     try:
         app_state.rabbitmq_connection = await connect_robust(RABBITMQ_URL)
@@ -50,7 +50,8 @@ async def lifespan(app: FastAPI):
         print(f"Conexión a RabbitMQ establecida (cola: {QUEUE_NAME})")
     except Exception as e:
         print(f"Error conectando a RabbitMQ: {e}")
-        raise
+        app_state.rabbitmq_connection = None
+        app_state.rabbitmq_channel = None
 
     print("API Gateway listo\n")
     yield
