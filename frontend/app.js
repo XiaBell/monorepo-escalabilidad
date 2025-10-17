@@ -25,16 +25,30 @@ function showToast(message, type = 'info') {
 async function fetchAPI(endpoint, options = {}) {
     try {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-            headers: {'Content-Type': 'application/json', ...options.headers},
+            headers: { 'Content-Type': 'application/json', ...options.headers },
             ...options
         });
 
+        const contentType = response.headers.get('content-type') || '';
+
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || 'Error en la petición');
+            // Intenta parsear JSON; si no, lee texto (HTML de ALB/S3)
+            if (contentType.includes('application/json')) {
+                const errorJson = await response.json();
+                throw new Error(errorJson.detail || JSON.stringify(errorJson));
+            } else {
+                const errorText = await response.text();
+                throw new Error(response.statusText || errorText?.slice(0, 200) || 'Error en la petición');
+            }
         }
 
-        return await response.json();
+        if (contentType.includes('application/json')) {
+            return await response.json();
+        }
+
+        // Respuesta inesperada (HTML/texto)
+        const txt = await response.text();
+        throw new Error(`Respuesta no JSON del backend: ${txt.slice(0, 200)}`);
     } catch (error) {
         console.error('Error en fetchAPI:', error);
         throw error;

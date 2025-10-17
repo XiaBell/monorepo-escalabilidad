@@ -191,6 +191,13 @@ resource "aws_ecs_service" "rabbitmq" {
     container_port   = 15672
   }
 
+  # Exponer AMQP (TCP 5672) vía NLB interno
+  load_balancer {
+    target_group_arn = aws_lb_target_group.rabbitmq_amqp_tg.arn
+    container_name   = "rabbitmq"
+    container_port   = 5672
+  }
+
   # Eliminado Service Discovery (Cloud Map) para evitar AccessDenied
 
   depends_on = [
