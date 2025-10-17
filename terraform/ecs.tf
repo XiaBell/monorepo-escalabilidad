@@ -36,11 +36,11 @@ resource "aws_ecs_task_definition" "api_gateway" {
       environment = [
         {
           name  = "DATABASE_URL"
-          value = "postgresql://${var.db_username}:${var.db_password}@${aws_db_instance.postgres.endpoint}/${aws_db_instance.postgres.db_name}"
+          value = "postgresql://${var.db_username}:${var.db_password}@${aws_db_instance.postgres.endpoint}:${aws_db_instance.postgres.port}/${aws_db_instance.postgres.db_name}"
         },
         {
           name  = "RABBITMQ_URL"
-          value = "amqp://${var.rabbitmq_username}:${var.rabbitmq_password}@rabbitmq.local:5672"
+          value = "amqp://${var.rabbitmq_username}:${var.rabbitmq_password}@${aws_lb.rabbitmq_nlb.dns_name}:5672"
         },
         {
           name  = "QUEUE_NAME"
@@ -80,11 +80,11 @@ resource "aws_ecs_task_definition" "worker" {
       environment = [
         {
           name  = "DATABASE_URL"
-          value = "postgresql://${var.db_username}:${var.db_password}@${aws_db_instance.postgres.endpoint}/${aws_db_instance.postgres.db_name}"
+          value = "postgresql://${var.db_username}:${var.db_password}@${aws_db_instance.postgres.endpoint}:${aws_db_instance.postgres.port}/${aws_db_instance.postgres.db_name}"
         },
         {
           name  = "RABBITMQ_URL"
-          value = "amqp://${var.rabbitmq_username}:${var.rabbitmq_password}@rabbitmq.local:5672"
+          value = "amqp://${var.rabbitmq_username}:${var.rabbitmq_password}@${aws_lb.rabbitmq_nlb.dns_name}:5672"
         },
         {
           name  = "QUEUE_NAME"

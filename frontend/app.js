@@ -3,7 +3,8 @@
  * Gestiona consultas asíncronas de productos
  */
 
-const API_BASE_URL = 'http://localhost:8000';
+// Cambiará en runtime: pegamos el ALB URL en el deploy (Terraform output alb_url)
+const API_BASE_URL = 'REEMPLAZAR_CON_ALB_URL';
 const POLLING_INTERVAL = 1500;
 
 const appState = {

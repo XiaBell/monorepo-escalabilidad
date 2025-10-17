@@ -147,6 +147,15 @@ resource "aws_security_group" "ecs_tasks" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  # Permitir tráfico desde el ALB a las tasks (API en 8000)
+  ingress {
+    description     = "HTTP from ALB to ECS tasks (api-gateway)"
+    from_port       = 8000
+    to_port         = 8000
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb.id]
+  }
+
   tags = merge(
     local.common_tags,
     {
